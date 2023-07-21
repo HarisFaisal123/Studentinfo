@@ -22,29 +22,14 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 
 public class login extends Application {
 
-
-
-    public static void switch_scene(Scene scene, Stage stage){
-        stage.setScene(scene);
-    }
-    public void start(Stage primaryStage){
-
-        ObservableList<String> options = FXCollections.observableArrayList(
-                "Add Student",
-                "View Student",
-                "Delete Student"
-        );
-        final ComboBox comboBox = new ComboBox(options);
-        comboBox.setValue("Options");
-
-        // view student scene
-
-        StackPane rootpane = new StackPane();
+    public static Scene Populating_view_students(ArrayList<String> result, Scene scene2,
+                                                 Stage primaryStage){
         GridPane view_students = new GridPane();
         view_students.setPadding(new Insets(0,0,25,25));
         Label f_name = new Label("    First Name    ");
@@ -68,10 +53,48 @@ public class login extends Application {
         VBox backbox = new VBox();
         view_students.setAlignment(Pos.CENTER);
         backbox.getChildren().addAll(backbtn2, view_students);
+        Integer count = 0;
+        Integer length = (result.size() / 4);
+        for (Integer row = 1; row <= length; row++) {
+            for (Integer column = 0; column < 4; column++) {
+                TextField data = new TextField();
+                data.setText(result.get(count));
+                view_students.add(data, column, row);
+                count++;
+            }
+        }
+        backbtn2.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                primaryStage.setScene(scene2);
+            }
+        });
+
+        Scene final_scene = new Scene(backbox,400,275);
+        return final_scene;
+    }
+
+    public static void switch_scene(Scene scene, Stage stage){
+        stage.setScene(scene);
+    }
+    public void start(Stage primaryStage){
+
+        ObservableList<String> options = FXCollections.observableArrayList(
+                "Add Student",
+                "View Student",
+                "Delete Student"
+        );
+        final ComboBox comboBox = new ComboBox(options);
+        comboBox.setValue("Options");
+
+        // view student scene
+
+        // StackPane rootpane = new StackPane();
 
 
 
-        Scene view_scene = new Scene(backbox,400 , 275);
+
+        // Scene view_scene = new Scene(backbox,400 , 275);
 
 
 
@@ -80,12 +103,6 @@ public class login extends Application {
         box.getChildren().add(comboBox);
         Scene scene2 = new Scene(box,400,275);
 
-        backbtn2.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                primaryStage.setScene(scene2);
-            }
-        });
 
         // Add student scene
 
@@ -143,6 +160,21 @@ public class login extends Application {
         abox.setAlignment(Pos.BOTTOM_RIGHT);
         student_info.add(abox,2,7);
 
+        add_button.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                String FIRST_NAME = f_n.getText();
+                String LAST_NAME = l_n.getText();
+                String AGE = age_view.getText();
+                String STUDENT_NUMBER = s_n.getText();
+                try {
+                    gettingconnection.add_values(FIRST_NAME,LAST_NAME,Integer.parseInt(AGE), Integer.parseInt(STUDENT_NUMBER));
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
         Scene add_student_scene = new Scene(student_info,400,275);
 
         // delete student scene
@@ -161,7 +193,7 @@ public class login extends Application {
         ImageView back3 = new ImageView(image3);
         back3.setFitHeight(20);
         back3.setFitWidth(20);
-        backbtn3.setGraphic(back2);
+        backbtn3.setGraphic(back3);
         backbtn3.setShape(new Circle());
         VBox delete = new VBox();
         Button delete_btn = new Button();
@@ -173,7 +205,18 @@ public class login extends Application {
         delete_btn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                deleted.setText("student has been deleted");
+                String data = entered_student.getText();
+                Integer int_data = Integer.parseInt(data);
+                Boolean flag = null;
+                try {
+                    flag = gettingconnection.delete_student(int_data);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+                if (flag.equals(true)) {
+                    deleted.setText("Student has been deleted");
+                }
+                else{deleted.setText("no matching Student found");}
                 entername.add(deleted,1,2);
             }
         });
@@ -260,6 +303,8 @@ public class login extends Application {
                 if (selected.equals("Add Student")){
                     primaryStage.setScene(add_student_scene);
                 } else if (selected.equals("View Student")){
+                    Scene view_scene = Populating_view_students(gettingconnection.get_result(),scene2,
+                            primaryStage);
                     primaryStage.setScene(view_scene);
                 } else if (selected.equals("Delete Student")) {
                     primaryStage.setScene(scene_delete);
